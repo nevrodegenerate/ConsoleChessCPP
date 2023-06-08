@@ -6,13 +6,12 @@ const int BOARDSIZE = 8;
 string history = "";
 
 /*
-    Шахи для двох гравців в консолі на C++.
 w - white
 b - black
 K - king (король)
 Q - queen (королева)
 R - rook (тура)
-H - horse (кінь)
+H - knight (кінь)
 B - bishop (слон)
 P - pawn (пішак)
 e - empty
@@ -73,6 +72,12 @@ bool IsMoveAllowed(Tile board[][BOARDSIZE], int startX, int startY, int stopX, i
 void MovePiece(Tile board[][BOARDSIZE], int startX, int startY, int stopX, int stopY);
 
 bool MovePlayer(Tile board[][BOARDSIZE], char clr);
+
+bool Check(Tile board[][BOARDSIZE], int startX, int startY, int stopX, int stopY, char clr);
+
+void Return(Tile board[][BOARDSIZE], int startX, int startY, int stopX, int stopY, char memFig, char memClr, bool memSpcl);
+
+
 
 int main() {
     Tile board[BOARDSIZE][BOARDSIZE];
@@ -144,9 +149,6 @@ void SetBoard(Tile board[][BOARDSIZE]) {
 }
 
 bool IsMoveAllowed(Tile board[][BOARDSIZE], int startX, int startY, int stopX, int stopY, char clr) {
-    char memClr = board[stopY][stopX].GetColor();
-    char memFig = board[stopY][stopX].GetPiece();
-    bool memSpcl = board[stopY][stopX].GetSpecial();
 
     if (startX >= BOARDSIZE or startY >= BOARDSIZE or stopX >= BOARDSIZE or stopY >= BOARDSIZE
         or startX < 0 or startY < 0 or stopX < 0 or stopY < 0) {
@@ -164,34 +166,20 @@ bool IsMoveAllowed(Tile board[][BOARDSIZE], int startX, int startY, int stopX, i
         return false;
     }
 
-    if (board[startY][startX].GetPiece() == 'K') {//king
+    switch (board[startY][startX].GetPiece()) {
+    case 'K':
         if (startX - stopX <= 1 and startX - stopX >= -1 and
             startY - stopY <= 1 and startY - stopY >= -1) {
             board[startY][startX].SetSpecial(false);
-            return true;
+            return Check(board, startX, startY, stopX, stopY, clr);
         }
-        /*
-        else if (board[startY][startX].GetSpecial()) {
-            if (startX == stopX - 2 and startY == stopY and board[startY][BOARDSIZE - 1].GetSpecial()) {
-                for (int x = startX + 1; x < BOARDSIZE - 1; x++) {
-                    if (board[startY][BOARDSIZE - 1].GetPiece() != 'e') {
-                        cout << "\nTo castle tiles between the king and the rook have to be empty\n\n";
-                        return false;
-                    }
-                }
-                board[startY][startX].SetSpecial(false);
-                board[startY][BOARDSIZE - 1].SetSpecial(false);
-                MovePiece(board, BOARDSIZE - 1, startY, stopX-1, stopY);
-                return true;
-            }
-            */
+
         else {
             cout << "\nThis figure cannot move in that way\n\n";
             return false;
         }
-    }
-
-    else if (board[startY][startX].GetPiece() == 'Q') { //queen
+        break;
+    case 'Q':
         if (startX == stopX) {//vertical
             for (int i = min(startY, stopY) + 1; i < max(startY, stopY); i++) {
                 if (board[i][startX].GetPiece() != 'e') {
@@ -199,7 +187,7 @@ bool IsMoveAllowed(Tile board[][BOARDSIZE], int startX, int startY, int stopX, i
                     return false;
                 }
             }
-            return true;
+            return Check(board, startX, startY, stopX, stopY, clr);
         }
 
         else if (startY == stopY) {//horizontal
@@ -209,7 +197,7 @@ bool IsMoveAllowed(Tile board[][BOARDSIZE], int startX, int startY, int stopX, i
                     return false;
                 }
             }
-            return true;
+            return Check(board, startX, startY, stopX, stopY, clr);
         }
 
         else if (startX < stopX and startY < stopY and startX - stopX == startY - stopY
@@ -221,7 +209,7 @@ bool IsMoveAllowed(Tile board[][BOARDSIZE], int startX, int startY, int stopX, i
                     return false;
                 }
             }
-            return true;
+            return Check(board, startX, startY, stopX, stopY, clr);
         }
 
         else if (startX < stopX and startY > stopY and startX - stopX == stopY - startY) { //diagonal 2
@@ -231,7 +219,7 @@ bool IsMoveAllowed(Tile board[][BOARDSIZE], int startX, int startY, int stopX, i
                     return false;
                 }
             }
-            return true;
+            return Check(board, startX, startY, stopX, stopY, clr);
         }
 
         else if (startX > stopX and startY < stopY and startX - stopX == stopY - startY) { //diagonal 3
@@ -241,16 +229,15 @@ bool IsMoveAllowed(Tile board[][BOARDSIZE], int startX, int startY, int stopX, i
                     return false;
                 }
             }
-            return true;
+            return Check(board, startX, startY, stopX, stopY, clr);
         }
 
         else {
             cout << "\nThis figure cannot move in that way\n\n";
             return false;
         }
-    }
-
-    else if (board[startY][startX].GetPiece() == 'R') {//rook
+        break;
+    case 'R':
         if (startX == stopX) {//vertical
             for (int i = min(startY, stopY) + 1; i < max(startY, stopY); i++) {
                 if (board[i][startX].GetPiece() != 'e') {
@@ -259,7 +246,7 @@ bool IsMoveAllowed(Tile board[][BOARDSIZE], int startX, int startY, int stopX, i
                 }
             }
             board[startY][startX].SetSpecial(false);
-            return true;
+            return Check(board, startX, startY, stopX, stopY, clr);
         }
 
         else if (startY == stopY) {//horizontal
@@ -270,15 +257,14 @@ bool IsMoveAllowed(Tile board[][BOARDSIZE], int startX, int startY, int stopX, i
                 }
             }
             board[startY][startX].SetSpecial(false);
-            return true;
+            return Check(board, startX, startY, stopX, stopY, clr);
         }
         else {
             cout << "\nThis figure cannot move in that way\n\n";
             return false;
         }
-    }
-
-    else if (board[startY][startX].GetPiece() == 'B') {//bishop
+        break;
+    case 'B':
         if (startX < stopX and startY < stopY and startX - stopX == startY - stopY
             or startX > stopX and startY > stopY and startX - stopX == startY - stopY) { //diagonal 1
             for (int x = min(startX, stopX) + 1, y = min(startY, stopY) + 1;
@@ -288,7 +274,7 @@ bool IsMoveAllowed(Tile board[][BOARDSIZE], int startX, int startY, int stopX, i
                     return false;
                 }
             }
-            return true;
+            return Check(board, startX, startY, stopX, stopY, clr);
         }
 
         else if (startX < stopX and startY > stopY and startX - stopX == stopY - startY) { //diagonal 2
@@ -298,7 +284,7 @@ bool IsMoveAllowed(Tile board[][BOARDSIZE], int startX, int startY, int stopX, i
                     return false;
                 }
             }
-            return true;
+            return Check(board, startX, startY, stopX, stopY, clr);
         }
 
         else if (startX > stopX and startY < stopY and startX - stopX == stopY - startY) { //diagonal 3
@@ -308,41 +294,39 @@ bool IsMoveAllowed(Tile board[][BOARDSIZE], int startX, int startY, int stopX, i
                     return false;
                 }
             }
-            return true;
+            return Check(board, startX, startY, stopX, stopY, clr);
         }
 
         else {
             cout << "\nThis figure cannot move in that way\n\n";
             return false;
         }
-    }
-
-    else if (board[startY][startX].GetPiece() == 'H') {//horse
+        break;
+    case 'H':
         if ((startX - stopX) * (startX - stopX) == 4 and (startY - stopY) * (startY - stopY) == 1 or
             (startX - stopX) * (startX - stopX) == 1 and (startY - stopY) * (startY - stopY) == 4) {
-            return true;
+            return Check(board, startX, startY, stopX, stopY, clr);
         }
         else {
             cout << "\nThis figure cannot move in that way\n\n";
             return false;
         }
-    }
-
-    else {//pawn
+        break;
+    default:
         switch (clr) {
         case 'w':
             if (startX == stopX and startY == stopY + 1 and board[stopY][stopX].GetPiece() == 'e') {
                 board[startY][startX].SetSpecial(false);
-                return true;
+                return Check(board, startX, startY, stopX, stopY, clr);
             }
             else if (startX == stopX and startY == stopY + 2 and board[stopY][stopX].GetPiece() == 'e'
                 and board[startY][startX].GetSpecial()) {
                 board[startY][startX].SetSpecial(false);
-                return true;
+                return Check(board, startX, startY, stopX, stopY, clr);
             }
             else if ((startX - stopX) * (startX - stopX) == 1 and startY == stopY + 1 and board[stopY][stopX].GetColor() == 'b') {
                 board[startY][startX].SetSpecial(false);
-                return true;
+                return Check(board, startX, startY, stopX, stopY, clr);
             }
             else {
                 cout << "\nThis figure cannot move in that way\n\n";
@@ -353,16 +337,16 @@ bool IsMoveAllowed(Tile board[][BOARDSIZE], int startX, int startY, int stopX, i
         case 'b':
             if (startX == stopX and startY == stopY - 1 and board[stopY][stopX].GetPiece() == 'e') {
                 board[startY][startX].SetSpecial(false);
-                return true;
+                return Check(board, startX, startY, stopX, stopY, clr);
             }
             else if (startX == stopX and startY == stopY - 2 and board[stopY][stopX].GetPiece() == 'e'
                 and board[startY][startX].GetSpecial()) {
                 board[startY][startX].SetSpecial(false);
-                return true;
+                return Check(board, startX, startY, stopX, stopY, clr);
             }
             else if ((startX - stopX) * (startX - stopX) == 1 and startY == stopY - 1 and board[stopY][stopX].GetColor() == 'w') {
                 board[startY][startX].SetSpecial(false);
-                return true;
+                return Check(board, startX, startY, stopX, stopY, clr);
             }
             else {
                 cout << "\nThis figure cannot move in that way\n\n";
@@ -370,9 +354,8 @@ bool IsMoveAllowed(Tile board[][BOARDSIZE], int startX, int startY, int stopX, i
             }
             break;
         }
+        break;
     }
-
-    return true;
 }
 
 void MovePiece(Tile board[][BOARDSIZE], int startX, int startY, int stopX, int stopY) {
@@ -387,20 +370,12 @@ bool MovePlayer(Tile board[][BOARDSIZE], char clr) {
 
     PrintBoard(board);
     cout << "\nEnter piece and destination coordinates without a space (i.e. 'e2e4')\n" <<
-        "or 'checkmate' if you are in a checkmate\n" <<
-        "or 'stalemate' if you are in a stalemate\n" <<
-        "or 'surrender' if you want to surrender:\n\n";
+        "or 'surrender' if you want to surrender or are in a checkmate:\n\n";
     do {
         cin >> command;
     } while (command.size() < 4);
 
-    if (command == "checkmate") {//мат
-        return true;
-    }
-    else if (command == "stalemate") {//пат
-        return true;
-    }
-    else if (command == "surrender") {//здатися
+    if (command == "surrender") {//здатися
         if (clr == 'w') {
             cout << "\nWhite player has surrendered. Black player won!\n";
         }
@@ -408,6 +383,9 @@ bool MovePlayer(Tile board[][BOARDSIZE], char clr) {
             cout << "\nBlack player has surrendered. White player won!\n";
         }
         return false;
+    }
+    else if (command == "skip") { //пропустити хід (тільки для тестування)
+        return true;
     }
     else {
         startX = int(command[0]) - 97;
@@ -427,4 +405,229 @@ bool MovePlayer(Tile board[][BOARDSIZE], char clr) {
             return MovePlayer(board, clr);
         }
     }
+}
+
+bool Check(Tile board[][BOARDSIZE], int startX, int startY, int stopX, int stopY, char clr) {
+
+    char memFig = board[stopY][stopX].GetPiece();
+    char memClr = board[stopY][stopX].GetColor();
+    bool memSpcl = board[stopY][stopX].GetSpecial();
+    int kingX = -1, kingY = -1;
+
+    MovePiece(board, startX, startY, stopX, stopY);
+
+    for (int y = 0; y < BOARDSIZE; y++) {
+        for (int x = 0; x < BOARDSIZE; x++) {
+            if (board[y][x].GetColor() == clr and board[y][x].GetPiece() == 'K') {
+                kingX = x;
+                kingY = y;
+                break;
+            }
+        }
+        if (kingX != -1 and kingY != -1) {
+            break;
+        }
+    }
+    //pawn
+    switch (clr) {
+    case 'w':
+        if (board[kingY - 1][kingX - 1].GetPiece() == 'P' and board[kingY - 1][kingX - 1].GetColor() != clr or
+            board[kingY - 1][kingX + 1].GetPiece() == 'P' and board[kingY - 1][kingX + 1].GetColor() != clr) {
+            cout << "\nThis move leaves you in check!\n\n";
+            Return(board, startX, startY, stopX, stopY, memFig, memClr, memSpcl);
+            return false;
+        }
+        break;
+    case 'b':
+        if (board[kingY + 1][kingX - 1].GetPiece() == 'P' and board[kingY + 1][kingX - 1].GetColor() != clr or
+            board[kingY + 1][kingX + 1].GetPiece() == 'P' and board[kingY + 1][kingX + 1].GetColor() != clr) {
+            cout << "\nThis move leaves you in check!\n\n";
+            Return(board, startX, startY, stopX, stopY, memFig, memClr, memSpcl);
+            return false;
+        }
+        break;
+    }
+    //horse
+    int j1 = 1, j2 = 2;
+
+    if (board[kingY + j1][kingX + j2].GetPiece() == 'H' and board[kingY + j1][kingX + j2].GetColor() != clr or
+        board[kingY + j2][kingX + j1].GetPiece() == 'H' and board[kingY + j2][kingX + j1].GetColor() != clr) {
+        cout << "\nThis move leaves you in check!\n\n";
+        Return(board, startX, startY, stopX, stopY, memFig, memClr, memSpcl);
+        return false;
+    }
+    j1 *= -1;
+    if (board[kingY + j1][kingX + j2].GetPiece() == 'H' and board[kingY + j1][kingX + j2].GetColor() != clr or
+        board[kingY + j2][kingX + j1].GetPiece() == 'H' and board[kingY + j2][kingX + j1].GetColor() != clr) {
+        cout << "\nThis move leaves you in check!\n\n";
+        Return(board, startX, startY, stopX, stopY, memFig, memClr, memSpcl);
+        return false;
+    }
+    j2 *= -1;
+    if (board[kingY + j1][kingX + j2].GetPiece() == 'H' and board[kingY + j1][kingX + j2].GetColor() != clr or
+        board[kingY + j2][kingX + j1].GetPiece() == 'H' and board[kingY + j2][kingX + j1].GetColor() != clr) {
+        cout << "\nThis move leaves you in check!\n\n";
+        Return(board, startX, startY, stopX, stopY, memFig, memClr, memSpcl);
+        return false;
+    }
+    j1 *= -1;
+    if (board[kingY + j1][kingX + j2].GetPiece() == 'H' and board[kingY + j1][kingX + j2].GetColor() != clr or
+        board[kingY + j2][kingX + j1].GetPiece() == 'H' and board[kingY + j2][kingX + j1].GetColor() != clr) {
+        cout << "\nThis move leaves you in check!\n\n";
+        Return(board, startX, startY, stopX, stopY, memFig, memClr, memSpcl);
+        return false;
+    }
+    //horizontal 1
+    for (int x = kingX + 1; x < BOARDSIZE; x++) {
+        if (board[kingY][x].GetPiece() != 'e') {
+            if (board[kingY][x].GetColor() != clr) {
+                if (board[kingY][x].GetPiece() == 'R' or board[kingY][x].GetPiece() == 'Q') {
+                    cout << "\nThis move leaves you in check!\n\n";
+                    Return(board, startX, startY, stopX, stopY, memFig, memClr, memSpcl);
+                    return false;
+                }
+                else {
+                    break;
+                }
+            }
+            else {
+                break;
+            }
+        }
+    }
+    //horizontal 2
+    for (int x = kingX - 1; x >= 0; x--) {
+        if (board[kingY][x].GetPiece() != 'e') {
+            if (board[kingY][x].GetColor() != clr) {
+                if (board[kingY][x].GetPiece() == 'R' or board[kingY][x].GetPiece() == 'Q') {
+                    cout << "\nThis move leaves you in check!\n\n";
+                    Return(board, startX, startY, stopX, stopY, memFig, memClr, memSpcl);
+                    return false;
+                }
+                else {
+                    break;
+                }
+            }
+            else {
+                break;
+            }
+        }
+    }
+    //vertical 1
+    for (int y = kingY + 1; y < BOARDSIZE; y++) {
+        if (board[y][kingX].GetPiece() != 'e') {
+            if (board[y][kingX].GetColor() != clr) {
+                if (board[y][kingX].GetPiece() == 'R' or board[y][kingX].GetPiece() == 'Q') {
+                    cout << "\nThis move leaves you in check!\n\n";
+                    Return(board, startX, startY, stopX, stopY, memFig, memClr, memSpcl);
+                    return false;
+                }
+                else {
+                    break;
+                }
+            }
+            else {
+                break;
+            }
+        }
+    }
+    //vertical 2
+    for (int y = kingY - 1; y >= 0; y--) {
+        if (board[y][kingX].GetPiece() != 'e') {
+            if (board[y][kingX].GetColor() != clr) {
+                if (board[y][kingX].GetPiece() == 'R' or board[y][kingX].GetPiece() == 'Q') {
+                    cout << "\nThis move leaves you in check!\n\n";
+                    Return(board, startX, startY, stopX, stopY, memFig, memClr, memSpcl);
+                    return false;
+                }
+                else {
+                    break;
+                }
+            }
+            else {
+                break;
+            }
+        }
+    }
+    //horizontal 1
+    for (int y = kingY + 1, x = kingX + 1; x < BOARDSIZE and y < BOARDSIZE; x++, y++) {
+        if (board[y][x].GetPiece() != 'e') {
+            if (board[y][x].GetColor() != clr) {
+                if (board[y][x].GetPiece() == 'B' or board[y][x].GetPiece() == 'Q') {
+                    cout << "\nThis move leaves you in check!\n\n";
+                    Return(board, startX, startY, stopX, stopY, memFig, memClr, memSpcl);
+                    return false;
+                }
+                else {
+                    break;
+                }
+            }
+            else {
+                break;
+            }
+        }
+    }
+    //horizontal 2
+    for (int y = kingY - 1, x = kingX - 1; x >= 0 and y >= 0; x--, y--) {
+        if (board[y][x].GetPiece() != 'e') {
+            if (board[y][x].GetColor() != clr) {
+                if (board[y][x].GetPiece() == 'B' or board[y][x].GetPiece() == 'Q') {
+                    cout << "\nThis move leaves you in check!\n\n";
+                    Return(board, startX, startY, stopX, stopY, memFig, memClr, memSpcl);
+                    return false;
+                }
+                else {
+                    break;
+                }
+            }
+            else {
+                break;
+            }
+        }
+    }
+    //horizontal 3
+    for (int y = kingY - 1, x = kingX + 1; x < BOARDSIZE and y >= 0; x++, y--) {
+        if (board[y][x].GetPiece() != 'e') {
+            if (board[y][x].GetColor() != clr) {
+                if (board[y][x].GetPiece() == 'B' or board[y][x].GetPiece() == 'Q') {
+                    cout << "\nThis move leaves you in check!\n\n";
+                    Return(board, startX, startY, stopX, stopY, memFig, memClr, memSpcl);
+                    return false;
+                }
+                else {
+                    break;
+                }
+            }
+            else {
+                break;
+            }
+        }
+    }
+    //horizontal 4
+    for (int y = kingY + 1, x = kingX - 1; x >= 0 and y < BOARDSIZE; x--, y++) {
+        if (board[y][x].GetPiece() != 'e') {
+            if (board[y][x].GetColor() != clr) {
+                if (board[y][x].GetPiece() == 'B' or board[y][x].GetPiece() == 'Q') {
+                    cout << "\nThis move leaves you in check!\n\n";
+                    Return(board, startX, startY, stopX, stopY, memFig, memClr, memSpcl);
+                    return false;
+                }
+                else {
+                    break;
+                }
+            }
+            else {
+                break;
+            }
+        }
+    }
+    Return(board, startX, startY, stopX, stopY, memFig, memClr, memSpcl);
+    return true;
+}
+
+void Return(Tile board[][BOARDSIZE], int startX, int startY, int stopX, int stopY, char memFig, char memClr, bool memSpcl) {
+    MovePiece(board, stopX, stopY, startX, startY);
+    board[stopY][stopX].SetPiece(memFig);
+    board[stopY][stopX].SetColor(memClr);
+    board[stopY][stopX].SetSpecial(memSpcl);
 }
